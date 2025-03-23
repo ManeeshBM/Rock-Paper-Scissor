@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Paper Scissors</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: url('rock-paper-scissor.png') no-repeat center center/cover;
+            padding: 20px;
+            animation: fadeIn 1s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 60%;
+            min-height: 80vh;
+            margin: auto;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #2e2c2c;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        .choices {
+            margin: 10px;
+        }
+        .choice {
+            padding: 12px 20px;
+            font-size: 18px;
+            margin: 8px;
+            cursor: pointer;
+            border: none;
+            border-radius: 50px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .choice:hover {
+            transform: scale(1.1);
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .rock { background-color: #ff4757; color: white; }
+        .paper { background-color: #1e90ff; color: white; }
+        .scissor { background-color: #fced19; color: white; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+            width: 380px;
+            animation: fadeIn 0.5s;
+        }
+        .modal h2 {
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .modal p {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .modal button {
+            background: linear-gradient(45deg, #ff4757, #ff6b81);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .modal button:hover {
+            background: linear-gradient(45deg, #ff6b81, #ff4757);
+            transform: scale(1.1);
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+        
+        .game-result {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .choice-box {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .choice-box img {
+            width: 80px;
+            height: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>Rock Paper Scissors</h1>
+        <p>Click on your choice to play!</p>
+        <div class="choices">
+    <button class="choice rock" onclick="playGame('rock')">
+        <img src="rockbg.jpg" alt="Rock" style="width: 80px; height: 80px; border-radius: 50%;">
+    </button>
+    <button class="choice paper" onclick="playGame('paper')">
+        <img src="paperbg.jpg" alt="Paper" style="width: 80px; height: 80px; border-radius: 50%;">
+    </button>
+    <button class="choice scissor" onclick="playGame('scissor')">
+        <img src="scissorbg.jpg" alt="Scissors" style="width: 80px; height: 80px; border-radius: 50%;">
+    </button>
+</div>
+
+    </div>
+
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div id="result-modal" class="modal">
+        <h2>Game Result</h2>
+        
+        <div class="game-result">
+            <div>
+                <p>You</p>
+                <div class="choice-box">
+                    <img id="user-choice-img" src="" alt="?">
+                </div>
+            </div>
+            <div>
+                <p>Computer</p>
+                <div class="choice-box">
+                    <img id="computer-choice-img" src="" alt="?">
+                </div>
+            </div>
+        </div>
+
+        <p id="modal-text"></p>
+        <button onclick="closeModal()">Play Again</button>
+    </div>
+
+    <script>
+        function launchConfetti() {
+            var duration = 2000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 40, spread: 500, ticks: 200, zIndex: 0 };
+
+            function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            var particleCount = 300 * (timeLeft / duration);
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+            }, 250);
+        }
+
+        function showModal(message) {
+            document.getElementById('modal-text').innerText = message;
+            document.getElementById('result-modal').style.display = 'block';
+            document.getElementById('modal-backdrop').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('result-modal').style.display = 'none';
+            document.getElementById('modal-backdrop').style.display = 'none';
+            confetti.reset(); 
+            resetGame();
+        }
+
+
+        function resetGame() {
+            document.getElementById('user-choice-img').src = "";
+            document.getElementById('computer-choice-img').src = "";
+        }
+
+        function playGame(userChoice) {
+            const choices = ['rock', 'paper', 'scissor'];
+            const computerChoice = choices[Math.floor(Math.random() * choices.length)];
+            
+            const choiceImages = {
+                rock: 'Rock.png',
+                paper: 'Paper.png',
+                scissor: 'Scissors.png'
+            };
+
+            document.getElementById('user-choice-img').src = choiceImages[userChoice];
+            document.getElementById('computer-choice-img').src = choiceImages[computerChoice];
+
+            let resultMessage = "";
+            if (userChoice === computerChoice) {
+                resultMessage = "It's a tie!";
+            } else if (
+                (userChoice === 'rock' && computerChoice === 'scissor') ||
+                (userChoice === 'paper' && computerChoice === 'rock') ||
+                (userChoice === 'scissor' && computerChoice === 'paper')
+            ) {
+                resultMessage = "You win! 🎉";
+                launchConfetti();
+            } else {
+                resultMessage = "Computer wins! 🤖";
+            }
+
+            showModal(resultMessage);
+        }
+    </script>
+</body>
+</html>
